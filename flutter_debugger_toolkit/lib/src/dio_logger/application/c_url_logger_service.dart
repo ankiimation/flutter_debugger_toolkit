@@ -1,5 +1,8 @@
+// ignore_for_file: constant_identifier_names
+
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:dart_exporter_annotation/dart_exporter_annotation.dart';
 import 'package:dio/dio.dart';
@@ -60,28 +63,47 @@ class _DefaultDioCUrlInterceptor extends Interceptor {
     this.onCurlError,
   });
 
-  static final Map<RequestOptions, DateTime> _requestTimeMapping = {};
-  static final Map<RequestOptions, DateTime> _responseTimeMapping = {};
-
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    super.onRequest(options, handler);
-    _requestTimeMapping[options] = DateTime.now();
-    onCUrlRequest?.call(options);
+  void onRequest(RequestOptions request, RequestInterceptorHandler handler) {
+    final mRequest = request.addRequestId.addRequestTime;
+    onCUrlRequest?.call(mRequest);
+    super.onRequest(mRequest, handler);
   }
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     super.onResponse(response, handler);
-    _responseTimeMapping[response.requestOptions] = DateTime.now();
-    onCurlResponse?.call(response.requestOptions, response);
+    final options = response.requestOptions.addResponseTime;
+    onCurlResponse?.call(options, response);
+    print(options.extra);
   }
 
   @override
   void onError(DioError err, ErrorInterceptorHandler handler) {
     super.onError(err, handler);
-    _responseTimeMapping[err.requestOptions] = DateTime.now();
-    onCurlError?.call(err.requestOptions, err);
+    final options = err.requestOptions.addResponseTime;
+    onCurlError?.call(options, err);
+  }
+}
+
+extension RequestOptionExtension on RequestOptions {
+  RequestOptions get addRequestId {
+    final data = Map.from(extra).cast<String, dynamic>();
+    data[CurlLoggerItem.flutter_debugger_toolkit_request_id] = generateUUID();
+    return copyWith(extra: data);
+  }
+
+  RequestOptions get addRequestTime {
+    final data = Map.from(extra).cast<String, dynamic>();
+    data[CurlLoggerItem.flutter_debugger_toolkit_request_time] = DateTime.now();
+    return copyWith(extra: data);
+  }
+
+  RequestOptions get addResponseTime {
+    final data = Map.from(extra).cast<String, dynamic>();
+    data[CurlLoggerItem.flutter_debugger_toolkit_response_time] =
+        DateTime.now();
+    return copyWith(extra: data);
   }
 }
 
@@ -129,6 +151,12 @@ String _cURLRepresentation(RequestOptions options) {
 
 ///[CurlLoggerItem]
 class CurlLoggerItem with _$CurlLoggerItem {
+  static const flutter_debugger_toolkit_request_id =
+      'flutter_debugger_toolkit_request_id';
+  static const flutter_debugger_toolkit_request_time =
+      'flutter_debugger_toolkit_start_request_time';
+  static const flutter_debugger_toolkit_response_time =
+      'flutter_debugger_toolkit_finish_request_time';
   static const warningDuration = Duration(seconds: 5);
   static const trashDuration = Duration(seconds: 30);
 
@@ -202,21 +230,25 @@ class CurlLoggerItem with _$CurlLoggerItem {
     return '$responseData';
   }
 
-  DateTime? get requestTime {
-    return _DefaultDioCUrlInterceptor._requestTimeMapping[request];
+  String get requestId {
+    return request.extra[flutter_debugger_toolkit_request_id] as String;
+  }
+
+  DateTime get requestTime {
+    return request.extra[flutter_debugger_toolkit_request_time] as DateTime;
   }
 
   DateTime? get responseTime {
-    return _DefaultDioCUrlInterceptor._responseTimeMapping[request];
+    return request.extra[flutter_debugger_toolkit_response_time] as DateTime?;
   }
 
   Duration? get duration {
     final requestTime = this.requestTime;
     final responseTime = this.responseTime;
-    if (requestTime != null && responseTime != null) {
-      return responseTime.difference(requestTime).abs();
+    if (responseTime == null) {
+      return null;
     }
-    return null;
+    return responseTime.difference(requestTime).abs();
   }
 }
 
@@ -244,4 +276,11 @@ String _mapToHtml(dynamic data, {int indentationLevel = 0}) {
   }
 
   return html.toString();
+}
+
+String generateUUID() {
+  final random = Random();
+  final dateTime = DateTime.now();
+
+  return '${dateTime.microsecondsSinceEpoch}';
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dart_exporter_annotation/dart_exporter_annotation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -60,6 +62,7 @@ class _DioCURLLoggerScreenState extends State<DioCURLLoggerScreen> {
                       final item = state.list[index];
                       final statusCode = item.response?.statusCode;
                       return ListTile(
+                        key: GlobalKey(),
                         onTap: () {
                           if (widget.onSelectItem != null) {
                             widget.onSelectItem?.call(item);
@@ -93,22 +96,32 @@ class _DioCURLLoggerScreenState extends State<DioCURLLoggerScreen> {
                                 ),
                               ),
                             ),
-                            if (item.duration != null)
-                              Expanded(
-                                child: Text(
-                                  '${(item.duration!.inMilliseconds / 1000).toStringAsFixed(1)}(s)',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: item.duration! >=
-                                            CurlLoggerItem.trashDuration
-                                        ? Colors.red
-                                        : item.duration! >=
-                                                CurlLoggerItem.warningDuration
-                                            ? Colors.orange
-                                            : null,
-                                  ),
-                                ),
+                            Expanded(
+                              child: CountUpTimer(
+                                begin: item.requestTime,
+                                end: item.responseTime,
+                                builder: (duration) {
+                                  return Text(
+                                    '${(duration.inMilliseconds / 1000).toStringAsFixed(1)}(s)',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: (duration >=
+                                                  CurlLoggerItem.trashDuration
+                                              ? Colors.red
+                                              : duration >=
+                                                      CurlLoggerItem
+                                                          .warningDuration
+                                                  ? Colors.orange
+                                                  : theme
+                                                      .colorScheme.onBackground)
+                                          .withOpacity(item.responseTime == null
+                                              ? 0.2
+                                              : 1),
+                                    ),
+                                  );
+                                },
                               ),
+                            ),
                           ],
                         ),
                         trailing: item.requesting
@@ -152,6 +165,58 @@ class _DioCURLLoggerScreenState extends State<DioCURLLoggerScreen> {
         ],
       ),
     );
+  }
+}
+
+class CountUpTimer extends StatefulWidget {
+  final DateTime begin;
+  final DateTime? end;
+  final Widget Function(Duration) builder;
+  const CountUpTimer({
+    Key? key,
+    required this.begin,
+    this.end,
+    required this.builder,
+  }) : super(key: key);
+
+  @override
+  State<CountUpTimer> createState() => _CountUpTimerState();
+}
+
+class _CountUpTimerState extends State<CountUpTimer> {
+  Timer? timer;
+  late Duration currentDuration =
+      widget.begin.difference(widget.end ?? DateTime.now()).abs();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.end == null) {
+      timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+        setState(() {
+          currentDuration = widget.begin.difference(DateTime.now()).abs();
+        });
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant CountUpTimer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.end != null) {
+      timer?.cancel();
+    }
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.builder(currentDuration);
   }
 }
 

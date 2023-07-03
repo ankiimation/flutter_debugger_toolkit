@@ -14,21 +14,12 @@ class CUrlLoggerCubit extends Cubit<CUrlLoggerState> {
   }
 
   void _onCurlLoggerItem(CurlLoggerItem item) {
-    final currentList = List<CurlLoggerItem>.from(state.list);
+    var currentList = [
+      item,
+      ...state.list.where((element) => element.requestId != item.requestId)
+    ];
 
-    if (item.response == null) {
-      currentList.insert(0, item);
-    } else {
-      final currentIndex =
-          currentList.indexWhere((element) => element.request == item.request);
-      if (currentIndex >= 0) {
-        currentList.removeAt(currentIndex);
-        currentList.insert(currentIndex, item);
-      } else {
-        currentList.insert(0, item);
-      }
-    }
-
+    currentList.sort((a, b) => b.requestTime.compareTo(a.requestTime));
     emit(
       state.copyWith(
         list: [

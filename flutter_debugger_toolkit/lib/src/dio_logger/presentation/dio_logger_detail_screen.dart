@@ -37,7 +37,7 @@ class _DioCURLLoggerDetailScreenState extends State<DioCURLLoggerDetailScreen> {
       bloc: CUrlLoggerCubit.instance,
       builder: (context, state) {
         final item = state.list.firstWhere(
-          (element) => element.request == widget.item.request,
+          (element) => element.requestId == widget.item.requestId,
           orElse: () => widget.item,
         );
         return Scaffold(
@@ -104,22 +104,28 @@ class _DioCURLLoggerDetailScreenState extends State<DioCURLLoggerDetailScreen> {
                     Expanded(
                         child: Text(
                             'RESPONSE (${item.response?.statusCode ?? '?'})')),
-                    if (item.duration != null) ...[
-                      const SizedBox(
-                        width: 8,
-                      ),
-                      Text(
-                        '${(item.duration!.inMilliseconds / 1000).toStringAsFixed(2)} (s)',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: item.duration! >= CurlLoggerItem.trashDuration
-                              ? Colors.red
-                              : item.duration! >= CurlLoggerItem.warningDuration
-                                  ? Colors.orange
-                                  : null,
-                        ),
-                      ),
-                    ]
+                    const SizedBox(
+                      width: 8,
+                    ),
+                    CountUpTimer(
+                      begin: item.requestTime,
+                      end: item.responseTime,
+                      builder: (duration) {
+                        return Text(
+                          '${(duration.inMilliseconds / 1000).toStringAsFixed(1)}(s)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: (duration >= CurlLoggerItem.trashDuration
+                                    ? Colors.red
+                                    : duration >= CurlLoggerItem.warningDuration
+                                        ? Colors.orange
+                                        : theme.colorScheme.onBackground)
+                                .withOpacity(
+                                    item.responseTime == null ? 0.2 : 1),
+                          ),
+                        );
+                      },
+                    )
                   ],
                 ),
                 if (item.requesting)
