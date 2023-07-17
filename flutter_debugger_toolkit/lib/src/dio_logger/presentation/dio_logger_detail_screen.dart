@@ -1,6 +1,5 @@
 part of 'dio_logger_screen.dart';
 
-@Export()
 class DioCURLLoggerDetailScreen extends StatefulWidget {
   final CurlLoggerItem item;
   const DioCURLLoggerDetailScreen({
@@ -119,7 +118,7 @@ class _DioCURLLoggerDetailScreenState extends State<DioCURLLoggerDetailScreen> {
                                     ? Colors.red
                                     : duration >= CurlLoggerItem.warningDuration
                                         ? Colors.orange
-                                        : theme.colorScheme.onBackground)
+                                        : theme.colorScheme.onSurface)
                                 .withOpacity(
                                     item.responseTime == null ? 0.2 : 1),
                           ),

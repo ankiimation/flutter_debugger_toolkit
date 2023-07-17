@@ -4,13 +4,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:dart_exporter_annotation/dart_exporter_annotation.dart';
 import 'package:dio/dio.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'c_url_logger_service.freezed.dart';
 
-@Export()
 class DioCurlLoggerService {
   DioCurlLoggerService._();
   static final instance = DioCurlLoggerService._();
@@ -146,7 +144,6 @@ String _cURLRepresentation(RequestOptions options) {
   return components.join(' \\\n\t');
 }
 
-@Export()
 @freezed
 
 ///[CurlLoggerItem]
@@ -214,10 +211,18 @@ class CurlLoggerItem with _$CurlLoggerItem {
 
   String get responseBeauty {
     final responseData = response?.data;
-    if (responseData is Map) {
-      const encoder = JsonEncoder.withIndent("     ");
-      final data = encoder.convert(responseData);
-      return data;
+    final contentLength = response?.headers.map['Content-Length'] ??
+        responseData.toString().length;
+    if (contentLength is int) {
+      if ((contentLength) < 500) {
+        if (responseData is Map) {
+          const encoder = JsonEncoder.withIndent("     ");
+          final data = encoder.convert(responseData);
+          return data;
+        }
+      } else {
+        return '<large-data> ${(contentLength / 1024).toStringAsFixed(2)}KB';
+      }
     }
     return '$responseData';
   }

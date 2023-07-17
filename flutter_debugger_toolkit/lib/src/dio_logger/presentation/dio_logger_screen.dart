@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:dart_exporter_annotation/dart_exporter_annotation.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,7 +9,6 @@ import 'package:flutter_debugger_toolkit/src/dio_logger/presentation/blocs/c_url
 
 part 'dio_logger_detail_screen.dart';
 
-@Export()
 class DioCURLLoggerScreen extends StatefulWidget {
   final GlobalKey<NavigatorState>? navigatorKey;
   final Function(CurlLoggerItem)? onSelectItem;
@@ -38,6 +36,7 @@ class _DioCURLLoggerScreenState extends State<DioCURLLoggerScreen> {
               bloc: CUrlLoggerCubit.instance,
               builder: (context, state) {
                 return Scaffold(
+                  backgroundColor: theme.scaffoldBackgroundColor,
                   appBar: AppBar(
                     title: const Text(
                       'REST API Debugger 💀',
@@ -104,7 +103,7 @@ class _DioCURLLoggerScreenState extends State<DioCURLLoggerScreen> {
                                   return Text(
                                     '${(duration.inMilliseconds / 1000).toStringAsFixed(1)}(s)',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 8,
                                       color: (duration >=
                                                   CurlLoggerItem.trashDuration
                                               ? Colors.red
@@ -112,8 +111,7 @@ class _DioCURLLoggerScreenState extends State<DioCURLLoggerScreen> {
                                                       CurlLoggerItem
                                                           .warningDuration
                                                   ? Colors.orange
-                                                  : theme
-                                                      .colorScheme.onBackground)
+                                                  : theme.colorScheme.onSurface)
                                           .withOpacity(item.responseTime == null
                                               ? 0.2
                                               : 1),
@@ -144,13 +142,13 @@ class _DioCURLLoggerScreenState extends State<DioCURLLoggerScreen> {
                                 children: [
                                   Text(
                                     'Code: $statusCode',
-                                    style: theme.textTheme.bodySmall,
+                                    style: theme.textTheme.bodyText2,
                                   ),
                                   Text(
                                     '${item.response}',
                                     maxLines: 6,
                                     overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodySmall,
+                                    style: theme.textTheme.bodyText2,
                                   )
                                 ],
                               )
