@@ -17,7 +17,10 @@ class DioCurlLoggerService {
 
   Stream<CurlLoggerItem> get stream => _streamController.stream;
 
-  void attachTo(Dio dio) {
+  bool Function(RequestOptions) _filter = (_) => true;
+
+  void attachTo(Dio dio, {bool Function(RequestOptions)? filter}) {
+    this._filter = filter ?? this._filter;
     dio.interceptors
         .removeWhere((element) => element is _DefaultDioCUrlInterceptor);
     dio.interceptors.add(interceptor);
@@ -25,28 +28,34 @@ class DioCurlLoggerService {
 
   late final interceptor = _DefaultDioCUrlInterceptor(
     onCUrlRequest: (request) {
-      _streamController.add(
-        CurlLoggerItem(
-          request: request,
-          response: null,
-        ),
-      );
+      if (_filter(request)) {
+        _streamController.add(
+          CurlLoggerItem(
+            request: request,
+            response: null,
+          ),
+        );
+      }
     },
     onCurlResponse: (request, response) {
-      _streamController.add(
-        CurlLoggerItem(
-          request: request,
-          response: response,
-        ),
-      );
+      if (_filter(request)) {
+        _streamController.add(
+          CurlLoggerItem(
+            request: request,
+            response: response,
+          ),
+        );
+      }
     },
     onCurlError: (request, err) {
-      _streamController.add(
-        CurlLoggerItem(
-          request: request,
-          response: err.response,
-        ),
-      );
+      if (_filter(request)) {
+        _streamController.add(
+          CurlLoggerItem(
+            request: request,
+            response: err.response,
+          ),
+        );
+      }
     },
   );
 }
